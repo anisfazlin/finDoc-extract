@@ -5,7 +5,6 @@ from io import BytesIO
 import pypdfium2 as pdfium
 import streamlit as st
 import multiprocessing
-from tempfile import NamedTemporaryFile
 import pandas as pd
 import json
 import requests
@@ -14,6 +13,7 @@ import os
 from langchain_core.prompts import PromptTemplate
 from langchain_openai import ChatOpenAI
 from langchain.chains import LLMChain
+from langchain_core.pydantic_v1 import BaseModel, Field
 
 load_dotenv()
 
