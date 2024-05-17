@@ -6,6 +6,8 @@ import pypdfium2 as pdfium
 import streamlit as st
 import multiprocessing
 from tempfile import NamedTemporaryFile
+from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import build
 import pandas as pd
 import json
 import requests
@@ -20,6 +22,8 @@ load_dotenv()
 
 open_api_key = os.getenv("OPENAI_API_KEY")
 llm = ChatOpenAI(temperature=0.4, model="gpt-3.5-turbo-0125")
+
+SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive.file']
 
 #CSS Style for Streamlit page
 #Remove top padding
@@ -172,6 +176,178 @@ def get_data(category: str, content: str):
     data = extract_structured_data(content, data_points)
     return data
 
+#4. Export to Google Sheets and Goold Drive
+NGROK_URL = "https://b0dc-2402-1980-8240-7d4a-6917-6715-cbc3-9dfc.ngrok-free.app"
+
+def authenticate_google():
+    """Authenticate and return the Google API client."""
+    creds = None
+    if 'token.json' in os.listdir():
+        creds = service_account.Credentials.from_authorized_user_file('token.json', SCOPES)
+    
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+        else:
+            flow = InstalledAppFlow.from_client_secrets_file(
+                os.path.join(os.path.dirname(os.path.abspath(__file__)), 'secret_client.json'), SCOPES)
+            flow.redirect_uri = f"{NGROK_URL}/callback"  # Set the redirect URI here
+            creds = flow.run_local_server(port=8080)
+        
+        with open('token.json', 'w') as token:
+            token.write(creds.to_json())
+    
+    return creds
+
+# # Function to search for an existing spreadsheet by name
+# def search_spreadsheet(drive_service, spreadsheet_name):
+#     query = f"name='{spreadsheet_name}' and mimeType='application/vnd.google-apps.spreadsheet'"
+#     results = drive_service.files().list(q=query).execute()
+#     files = results.get('files', [])
+#     if files:
+#         return files[0]['id']
+#     return None
+
+def create_or_update_spreadsheet(service, data, category, spreadsheet_name='Personal Ledger'):
+    """Create or update a spreadsheet and return its ID."""
+    try:
+        # Check if the spreadsheet already exists
+        drive_service = build('drive', 'v3', credentials=service)
+        response = drive_service.files().list(q=f"name='{spreadsheet_name}'", spaces='drive').execute()
+        files = response.get('files', [])
+
+        if files:
+            spreadsheet_id = files[0]['id']
+            sheet_service = build('sheets', 'v4', credentials=service)
+            sheet_metadata = sheet_service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute()
+            sheet_names = [sheet['properties']['title'] for sheet in sheet_metadata['sheets']]
+            
+            if category in sheet_names:
+                # Sheet exists, append data
+                range_name = f"{category}!A1"
+                response = sheet_service.spreadsheets().values().append(
+                    spreadsheetId=spreadsheet_id,
+                    range=range_name,
+                    valueInputOption="RAW",
+                    insertDataOption="INSERT_ROWS",
+                    body={"values": data}
+                ).execute()
+            else:
+                # Create new sheet
+                requests = [
+                    {
+                        "addSheet": {
+                            "properties": {
+                                "title": category
+                            }
+                        }
+                    }
+                ]
+                body = {
+                    'requests': requests
+                }
+                response = sheet_service.spreadsheets().batchUpdate(
+                    spreadsheetId=spreadsheet_id,
+                    body=body
+                ).execute()
+
+                # Add data to new sheet
+                range_name = f"{category}!A1"
+                response = sheet_service.spreadsheets().values().update(
+                    spreadsheetId=spreadsheet_id,
+                    range=range_name,
+                    valueInputOption="RAW",
+                    body={"values": data}
+                ).execute()
+
+            return spreadsheet_id
+        else:
+            # Create new spreadsheet
+            sheet_service = build('sheets', 'v4', credentials=service)
+            spreadsheet = {
+                'properties': {
+                    'title': spreadsheet_name
+                },
+                'sheets': [
+                    {
+                        'properties': {
+                            'title': category
+                        }
+                    }
+                ]
+            }
+            spreadsheet = sheet_service.spreadsheets().create(body=spreadsheet).execute()
+            spreadsheet_id = spreadsheet.get('spreadsheetId')
+
+            # Add data to the newly created sheet
+            range_name = f"{category}!A1"
+            response = sheet_service.spreadsheets().values().update(
+                spreadsheetId=spreadsheet_id,
+                range=range_name,
+                valueInputOption="RAW",
+                body={"values": data}
+            ).execute()
+
+            return spreadsheet_id
+    except HttpError as err:
+        st.error(f"An error occurred: {err}")
+        return None
+    
+# def main():
+#     st.markdown('Generate your personal ledger by uploading your financial documents - powered by Artificial Intelligence.')
+#     st.title("FiscalFile Forge: Unleash your financial data")
+    
+#     st.write('\n')  # add spacing
+
+#     st.subheader('\nWhat is your email all about?\n')
+#     with st.expander("SECTION - Upload Financial Documents", expanded=True):
+#         uploaded_files = st.file_uploader("Choose an image financial file", accept_multiple_files=True)
+        
+#         if uploaded_files:
+#             results = []  # Initialize results list outside the loop
+
+#             # Process each uploaded file
+#             for uploaded_file in uploaded_files:
+#                 with NamedTemporaryFile(suffix='.csv') as f:
+#                     f.write(uploaded_file.getbuffer())
+#                     f.seek(0)  # Reset file pointer to beginning
+#                     content = extract_content(f.name)
+                    
+#                     # Classify document and extract structured data
+#                     # category = classify_document(content)
+#                     # data = process_document(content)
+#                     classification_result = classify_document(content)
+#                     category = classification_result
+                    
+#                     categories = ["expenses", "donations", "income"]
+#                     #DYnamically change displayed category based on classification
+#                     selected_category = st.selectbox("Select a category to view the data", categories, index=categories.index(category))
+                    
+#                     data_points_template = generate_prompt_template(selected_category)
+#                     data = extract_structured_data(content, data_points_template)
+                    
+#                     # Parse data and append to results
+#                     json_data = json.loads(data)
+#                     if isinstance(json_data, list):
+#                         results.extend(json_data)  # Use extend() for lists
+#                     else:
+#                         results.append(json_data)  # Wrap the dict in a list
+
+#             # Display results if any documents were processed
+#             if results:
+#                 try:
+#                     df = pd.DataFrame(results)
+#                     st.subheader("Results")
+                    
+#                     st.data_editor(df)
+
+#                 except Exception as e:
+#                     st.error(f"An error occurred while creating the DataFrame: {e}")
+#                     st.write(results)  # Print the data to see its content
+
+# if __name__ == '__main__':
+#     multiprocessing.freeze_support()
+#     main()
 
 def main():
     st.markdown('Generate your personal ledger by uploading your financial documents - powered by Artificial Intelligence.')
@@ -225,6 +401,12 @@ def main():
                     st.error(f"An error occurred while creating the DataFrame: {e}")
                     st.write(results)  # Print the data to see its content
 
+            # Export to Google Sheets Button
+                if st.button("Export to Google Sheets"):
+                    creds = authenticate_google()
+                    spreadsheet_id = create_or_update_spreadsheet(creds, df.values.tolist(), selected_category)
+                    if spreadsheet_id:
+                        st.success(f'Data successfully exported to Google Sheets. [Click here to open the spreadsheet](https://docs.google.com/spreadsheets/d/{spreadsheet_id}/edit)')
+
 if __name__ == '__main__':
-    multiprocessing.freeze_support()
     main()
