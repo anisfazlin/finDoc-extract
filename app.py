@@ -26,9 +26,9 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaFileUpload
 
-load_dotenv()
+open_api_key = st.secrets["OPENAI_API_KEY"]
+ngrok_url = st.secrets["NGROK_URL"]
 
-open_api_key = os.getenv("OPENAI_API_KEY")
 llm = ChatOpenAI(temperature=0.4, model="gpt-3.5-turbo-0125")
 # llm = ChatGroq()
 
@@ -98,73 +98,6 @@ def parse_json_robustly(content):
     except Exception as e:  # Catch any parsing errors (including demjson exceptions)
         print(f"Error parsing JSON: {e}")
         return None
-    
-# def convert_pdf_to_images(file_path, scale=300/72):
-#     try:
-#         pdf_file = pdfium.PdfDocument(file_path)
-#         page_indices = [i for i in range(len(pdf_file))]
-#         renderer = pdf_file.render(
-#             pdfium.PdfBitmap.to_pil,
-#             page_indices=page_indices,
-#             scale=scale
-#         )
-#         final_images = []
-
-#         for i, image in zip(page_indices, renderer):
-#             image_byte_array = BytesIO()
-#             image.save(image_byte_array, format='jpeg', optimize=True)
-#             image_byte_array = image_byte_array.getvalue()
-#             final_images.append(dict({i: image_byte_array}))
-
-#         return final_images
-#     except pdfium.PdfiumError as e:
-#         st.error(f"Failed to load PDF document: {e}")
-        # return None
-
-# 2. Extract text from images via pytesseract
-
-# def extract_text_from_img(list_dict_final_images):
-#     image_list = [list(data.values())[0] for data in list_dict_final_images]
-#     image_content = []
-
-#     for index, image_bytes in enumerate(image_list):
-#         image = Image.open(BytesIO(image_bytes))
-#         raw_text = str(image_to_string(image))
-#         image_content.append(raw_text)
-
-#     return "\n".join(image_content)
-
-# def extract_content(file_path, file_type, whitelist="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789$@*"):
-#     if file_type == 'pdf':
-#         images_list = convert_pdf_to_images(file_path)
-#         if images_list is None:
-#             return None
-#         text_with_pytesseract = extract_text_from_img(images_list)
-#         return text_with_pytesseract
-#     else:
-#         image = Image.open(file_path)
-#         text_with_pytesseract = image_to_string(image)
-#         return text_with_pytesseract
-
-# def extract_content(file: str):
-#     images_list = convert_pdf_to_images(file)
-#     text_with_pytesseract = extract_text_from_img(images_list)
-#     return text_with_pytesseract
-#     file_extension = os.path.splitext(file)[1].lower()
-#     print(file_extension)
-    
-    
-#     if file_extension == ".pdf":
-#         images_list = convert_pdf_to_images(file)
-#         text_with_pytesseract = extract_text_from_img(images_list)
-#     elif file_extension in [".jpg", ".jpeg", ".png"]:
-#         text_with_pytesseract = extract_text_from_image(file)
-#     else:
-#         raise ValueError(f"Unsupported file type: {file_extension}")
-
-#     return text_with_pytesseract
-    
-
     
 # 4. Categorization and Template Mapping Chain
 
@@ -272,8 +205,6 @@ def extract_structured_data(content: str, data_points):
     return results
 
 #5. Export to Google Sheets
-NGROK_URL = "https://b0dc-2402-1980-8240-7d4a-6917-6715-cbc3-9dfc.ngrok-free.app"
-
 
 def authenticate_google():
     """Authenticate and return the Google API client."""
@@ -802,38 +733,39 @@ def main():
                     continue
                 
                 # st.write(content)
-
-                classification_result = classify_document(content)
-                category = classification_result
                 
-                categories = ["bank statement", "invoice", "receipt", "income statement"]
-                selected_category = st.selectbox(f"Select a category for file {uploaded_file.name}", categories, index=categories.index(category), key=f"selectbox_{uploaded_file.name}")
-                
+                with st.spinner("Extracting structured data..."):
+                    classification_result = classify_document(content)
+                    category = classification_result
+                    
+                    categories = ["bank statement", "invoice", "receipt", "income statement"]
+                    selected_category = st.selectbox(f"Select a category for file {uploaded_file.name}", categories, index=categories.index(category), key=f"selectbox_{uploaded_file.name}")
+                    
 
-                data_points_template = generate_prompt_template(selected_category)
-                data = extract_structured_data(content, data_points_template)
+                    data_points_template = generate_prompt_template(selected_category)
+                    data = extract_structured_data(content, data_points_template)
                 
-                try:
-                    # st.write(f"Raw content of {uploaded_file.name}:\n{data}")
-                    json_data = validate_json(data)
-                    if json_data is None:
-                        json_data = parse_json_robustly(content)
-                except Exception as e:
-                    st.error(f"Could not process JSON for {uploaded_file.name}: {e}")
-                    st.write(f"Raw content:\n{data}")
-                    continue
+                    try:
+                        # st.write(f"Raw content of {uploaded_file.name}:\n{data}")
+                        json_data = validate_json(data)
+                        if json_data is None:
+                            json_data = parse_json_robustly(content)
+                    except Exception as e:
+                        st.error(f"Could not process JSON for {uploaded_file.name}: {e}")
+                        st.write(f"Raw content:\n{data}")
+                        continue
 
-                # json_data = json.loads(data)
-                if isinstance(json_data, list):
-                    if selected_category in results:
-                        results[selected_category].extend(json_data)
+                    # json_data = json.loads(data)
+                    if isinstance(json_data, list):
+                        if selected_category in results:
+                            results[selected_category].extend(json_data)
+                        else:
+                            results[selected_category] = json_data
                     else:
-                        results[selected_category] = json_data
-                else:
-                    if selected_category in results:
-                        results[selected_category].append(json_data)
-                    else:
-                        results[selected_category] = [json_data]
+                        if selected_category in results:
+                            results[selected_category].append(json_data)
+                        else:
+                            results[selected_category] = [json_data]
 
             # Display results if any documents were processed
             if results:
@@ -855,12 +787,15 @@ def main():
                         st.write('\n')
 
                         st.subheader(f"Results for {selected_category.capitalize()}")
-                        st.data_editor(df, key=f"data_editor_{selected_category}")
+                        edited_df = st.data_editor(df, key=f"data_editor_{selected_category}")
+
+                        # Save the edited data back to results
+                        results[selected_category] = edited_df.to_dict(orient='records')
 
                         if st.button(f"Export {selected_category} to Google Sheets", key=f"export_button_{selected_category}"):
                             creds = authenticate_google()
                             if creds:
-                                spreadsheet_id = create_or_update_spreadsheet_with_multiple_sheets(creds, {selected_category: data})
+                                spreadsheet_id = create_or_update_spreadsheet_with_multiple_sheets(creds, {selected_category: results[selected_category]})
                                 if spreadsheet_id:
                                     st.success(f'Data successfully exported to Google Sheets. [Click here to open the {selected_category.capitalize()} spreadsheet](https://docs.google.com/spreadsheets/d/{spreadsheet_id}/edit)')
 
@@ -875,7 +810,7 @@ def main():
                     if creds:
                         spreadsheet_id = create_or_update_spreadsheet_with_multiple_sheets(creds, results)
                         if spreadsheet_id:
-                            st.success(f'All data successfully exported to Google Sheets. [Click here to open the spreadsheet](https://docs.google.com/spreadsheets/d/{spreadsheet_id}/edit)')                            
+                            st.success(f'All data successfully exported to Google Sheets. [Click here to open the spreadsheet](https://docs.google.com/spreadsheets/d/{spreadsheet_id}/edit)')                        
 if __name__ == '__main__':
     main()
 
