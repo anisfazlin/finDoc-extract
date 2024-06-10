@@ -1,0 +1,16 @@
+streamlit
+pytesseract
+pillow
+pypdfium2
+opencv-python-headless
+numpy
+pandas
+re
+requests
+google-auth
+google-auth-oauthlib
+google-auth-httplib2
+google-api-python-client
+langchain-core
+langchain-openai
+demjson3
