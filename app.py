@@ -249,7 +249,7 @@ def authenticate_google():
             "type": st.secrets["google_type"],
             "project_id": st.secrets["google_project_id"],
             "private_key_id": st.secrets["google_private_key_id"],
-            "private_key": st.secrets["google_private_key"],
+            "private_key": st.secrets["google_private_key"].replace('\\n', '\n'),  # Ensure proper formatting of the private key
             "client_email": st.secrets["google_client_email"],
             "client_id": st.secrets["google_client_id"],
             "auth_uri": st.secrets["google_auth_uri"],
