@@ -473,7 +473,7 @@ def validate_json(content):
 #                         if spreadsheet_id:
 #                             st.success(f'All data successfully exported to Google Sheets. [Click here to open the spreadsheet](https://docs.google.com/spreadsheets/d/{spreadsheet_id}/edit)')       
 
-def main():
+ef main():
     st.markdown('Generate your personal ledger by uploading your financial documents - powered by Artificial Intelligence.')
     st.title("FinData - Unstructured Data to Structured Financial Data Extraction & Classification")
 
@@ -509,6 +509,8 @@ def main():
 
                     categories = ["bank statement", "invoice", "receipt", "income statement"]
                     selected_category_key = f"selectbox_{uploaded_file.name}_{idx}"
+                    
+                    # Initialize the key if it doesn't exist
                     if selected_category_key not in st.session_state:
                         st.session_state[selected_category_key] = category
 
@@ -548,7 +550,8 @@ def main():
             if st.session_state.results:
                 for selected_category, data in st.session_state.results.items():
                     try:
-                        # Check if the first item in the list is a dictionary, and get keys from it
+                        # Check if the first item in the list is
+                                                # Check if the first item in the list is a dictionary, and get keys from it
                         if isinstance(data, list) and len(data) > 0 and isinstance(data[0], dict):
                             df = pd.DataFrame(data)
 
@@ -586,7 +589,6 @@ def main():
                         spreadsheet_id = create_or_update_spreadsheet_with_multiple_sheets(creds, st.session_state.results)
                         if spreadsheet_id:
                             st.success(f'All data successfully exported to Google Sheets. [Click here to open the spreadsheet](https://docs.google.com/spreadsheets/d/{spreadsheet_id}/edit)')
-                            
+
 if __name__ == '__main__':
     main()
-
