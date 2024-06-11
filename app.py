@@ -229,7 +229,7 @@ def authenticate_google():
                 }
             }
             flow = InstalledAppFlow.from_client_config(client_config, SCOPES)
-            flow.redirect_uri = st.secrets["google"]["redirect_uri"]
+            flow.redirect_uri = st.secrets["google_redirect_uri"]
             creds = flow.run_local_server(port=8080)
         
         # Save the credentials for the next run
