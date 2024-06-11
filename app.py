@@ -359,31 +359,136 @@ def validate_json(content):
             return None
     return data
 
+# def main():
+#     st.markdown('Generate your personal ledger by uploading your financial documents - powered by Artificial Intelligence.')
+#     st.title("FinData - Unstructured Data to Structured Financial Data Extraction & Classification")
+
+#     st.write('\n')  # add spacing
+
+#     st.subheader('\nWhat is your financial data is all about?\n')
+#     with st.expander("SECTION - Upload Financial Documents", expanded=True):
+#         uploaded_files = st.file_uploader("Upload PDF or images financial data", accept_multiple_files=True, type=['pdf', 'jpg', 'jpeg', 'png'])
+
+#         if uploaded_files:
+#             if "results" not in st.session_state:
+#                 st.session_state.results = {}  # Initialize results dictionary to store data per category
+
+#             if "processed_files" not in st.session_state:
+#                 st.session_state.processed_files = set()  # Set to keep track of processed files
+
+#             if "selected_categories" not in st.session_state:
+#                 st.session_state.selected_categories = {}  # Initialize selected categories for each file
+
+#             for idx, uploaded_file in enumerate(uploaded_files):
+#                 if uploaded_file.name in st.session_state.processed_files:
+#                     # st.info(f"File {uploaded_file.name} has already been processed.")
+#                     continue
+
+#                 file_extension = uploaded_file.name.split('.')[-1].lower()
+#                 suffix = f".{file_extension}"
+
+#                 with NamedTemporaryFile(delete=False, suffix=suffix) as temp_file:
+#                     temp_file.write(uploaded_file.read())
+#                     temp_file_path = temp_file.name
+
+#                 content = extract_content(temp_file_path, file_extension)
+#                 os.remove(temp_file_path)
+
+#                 if content is None:
+#                     st.error(f"Could not process the file: {uploaded_file.name}")
+#                     continue
+
+#                 if uploaded_file.name not in st.session_state.selected_categories:
+#                     with st.spinner("Extracting structured data..."):
+#                         classification_result = classify_document(content)
+#                         category = classification_result
+#                         st.session_state.selected_categories[uploaded_file.name] = category
+#                 else:
+#                     category = st.session_state.selected_categories[uploaded_file.name]
+
+#                 categories = ["bank statement", "invoice", "receipt", "income statement"]
+#                 selected_category = st.selectbox(f"Select a category for file {uploaded_file.name}", categories, index=categories.index(category), key=f"selectbox_{uploaded_file.name}")
+
+#                 st.session_state.selected_categories[uploaded_file.name] = selected_category
+
+#                 data_points_template = generate_prompt_template(selected_category)
+#                 data = extract_structured_data(content, data_points_template)
+
+#                 try:
+#                     json_data = validate_json(data)
+#                     if json_data is None:
+#                         json_data = parse_json_robustly(content)
+#                 except Exception as e:
+#                     st.error(f"Could not process JSON for {uploaded_file.name}: {e}")
+#                     st.write(f"Raw content:\n{data}")
+#                     continue
+
+#                 if isinstance(json_data, list):
+#                     if selected_category in st.session_state.results:
+#                         st.session_state.results[selected_category].extend(json_data)
+#                     else:
+#                         st.session_state.results[selected_category] = json_data
+#                 else:
+#                     if selected_category in st.session_state.results:
+#                         st.session_state.results[selected_category].append(json_data)
+#                     else:
+#                         st.session_state.results[selected_category] = [json_data]
+
+#                 st.session_state.processed_files.add(uploaded_file.name)
+
+#             if st.session_state.results:
+#                 for selected_category, data in st.session_state.results.items():
+#                     try:
+#                         if isinstance(data, list) and len(data) > 0 and isinstance(data[0], dict):
+#                             df = pd.DataFrame(data)
+#                             for col in df.columns:
+#                                 if not pd.api.types.is_numeric_dtype(df[col]) and not pd.api.types.is_datetime64_any_dtype(df[col]):
+#                                     df[col] = df[col].astype(str)
+#                         else:
+#                             st.error(f"The data for {selected_category} is not in the expected format.")
+#                             continue
+
+#                         st.write('\n')
+#                         st.subheader(f"Results for {selected_category.capitalize()}")
+#                         edited_df = st.data_editor(df, key=f"data_editor_{selected_category}")
+
+#                         st.session_state.results[selected_category] = edited_df.to_dict(orient='records')
+
+#                         if st.button(f"Export {selected_category} to Google Sheets", key=f"export_button_{selected_category}"):
+#                             creds = authenticate_google()
+#                             if creds:
+#                                 spreadsheet_id = create_or_update_spreadsheet_with_multiple_sheets(creds, {selected_category: st.session_state.results[selected_category]})
+#                                 if spreadsheet_id:
+#                                     st.success(f'Data successfully exported to Google Sheets. [Click here to open the {selected_category.capitalize()} spreadsheet](https://docs.google.com/spreadsheets/d/{spreadsheet_id}/edit)')
+
+#                     except Exception as e:
+#                         st.error(f"An error occurred while creating the DataFrame for {selected_category}: {e}")
+#                         st.write(data)
+
+#                 st.write('\n')
+#                 if st.button("Export All Data to Google Sheets"):
+#                     creds = authenticate_google()
+#                     if creds:
+#                         spreadsheet_id = create_or_update_spreadsheet_with_multiple_sheets(creds, st.session_state.results)
+#                         if spreadsheet_id:
+#                             st.success(f'All data successfully exported to Google Sheets. [Click here to open the spreadsheet](https://docs.google.com/spreadsheets/d/{spreadsheet_id}/edit)')       
+
 def main():
     st.markdown('Generate your personal ledger by uploading your financial documents - powered by Artificial Intelligence.')
     st.title("FinData - Unstructured Data to Structured Financial Data Extraction & Classification")
 
     st.write('\n')  # add spacing
 
-    st.subheader('\nWhat is your financial data is all about?\n')
+    st.subheader('\nWhat is your financial data all about?\n')
     with st.expander("SECTION - Upload Financial Documents", expanded=True):
         uploaded_files = st.file_uploader("Upload PDF or images financial data", accept_multiple_files=True, type=['pdf', 'jpg', 'jpeg', 'png'])
 
         if uploaded_files:
+            # Initialize results dictionary if not in session state
             if "results" not in st.session_state:
-                st.session_state.results = {}  # Initialize results dictionary to store data per category
-
-            if "processed_files" not in st.session_state:
-                st.session_state.processed_files = set()  # Set to keep track of processed files
-
-            if "selected_categories" not in st.session_state:
-                st.session_state.selected_categories = {}  # Initialize selected categories for each file
+                st.session_state.results = {}
 
             for idx, uploaded_file in enumerate(uploaded_files):
-                if uploaded_file.name in st.session_state.processed_files:
-                    # st.info(f"File {uploaded_file.name} has already been processed.")
-                    continue
-
                 file_extension = uploaded_file.name.split('.')[-1].lower()
                 suffix = f".{file_extension}"
 
@@ -398,21 +503,26 @@ def main():
                     st.error(f"Could not process the file: {uploaded_file.name}")
                     continue
 
-                if uploaded_file.name not in st.session_state.selected_categories:
-                    with st.spinner("Extracting structured data..."):
-                        classification_result = classify_document(content)
-                        category = classification_result
-                        st.session_state.selected_categories[uploaded_file.name] = category
-                else:
-                    category = st.session_state.selected_categories[uploaded_file.name]
+                with st.spinner("Extracting structured data..."):
+                    classification_result = classify_document(content)
+                    category = classification_result
 
-                categories = ["bank statement", "invoice", "receipt", "income statement"]
-                selected_category = st.selectbox(f"Select a category for file {uploaded_file.name}", categories, index=categories.index(category), key=f"selectbox_{uploaded_file.name}")
+                    categories = ["bank statement", "invoice", "receipt", "income statement"]
+                    selected_category_key = f"selectbox_{uploaded_file.name}"
+                    if selected_category_key not in st.session_state:
+                        st.session_state[selected_category_key] = category
 
-                st.session_state.selected_categories[uploaded_file.name] = selected_category
+                    selected_category = st.selectbox(
+                        f"Select a category for file {uploaded_file.name}",
+                        categories,
+                        index=categories.index(st.session_state[selected_category_key]),
+                        key=selected_category_key
+                    )
 
-                data_points_template = generate_prompt_template(selected_category)
-                data = extract_structured_data(content, data_points_template)
+                    st.session_state[selected_category_key] = selected_category
+
+                    data_points_template = generate_prompt_template(selected_category)
+                    data = extract_structured_data(content, data_points_template)
 
                 try:
                     json_data = validate_json(data)
@@ -434,13 +544,15 @@ def main():
                     else:
                         st.session_state.results[selected_category] = [json_data]
 
-                st.session_state.processed_files.add(uploaded_file.name)
-
+            # Display results if any documents were processed
             if st.session_state.results:
                 for selected_category, data in st.session_state.results.items():
                     try:
+                        # Check if the first item in the list is a dictionary, and get keys from it
                         if isinstance(data, list) and len(data) > 0 and isinstance(data[0], dict):
                             df = pd.DataFrame(data)
+
+                            # Convert all columns to string except numerical and datetime columns
                             for col in df.columns:
                                 if not pd.api.types.is_numeric_dtype(df[col]) and not pd.api.types.is_datetime64_any_dtype(df[col]):
                                     df[col] = df[col].astype(str)
@@ -449,9 +561,11 @@ def main():
                             continue
 
                         st.write('\n')
+
                         st.subheader(f"Results for {selected_category.capitalize()}")
                         edited_df = st.data_editor(df, key=f"data_editor_{selected_category}")
 
+                        # Save the edited data back to results
                         st.session_state.results[selected_category] = edited_df.to_dict(orient='records')
 
                         if st.button(f"Export {selected_category} to Google Sheets", key=f"export_button_{selected_category}"):
@@ -465,13 +579,14 @@ def main():
                         st.error(f"An error occurred while creating the DataFrame for {selected_category}: {e}")
                         st.write(data)
 
-                st.write('\n')
+                # Add an "Export All" button
                 if st.button("Export All Data to Google Sheets"):
                     creds = authenticate_google()
                     if creds:
                         spreadsheet_id = create_or_update_spreadsheet_with_multiple_sheets(creds, st.session_state.results)
                         if spreadsheet_id:
-                            st.success(f'All data successfully exported to Google Sheets. [Click here to open the spreadsheet](https://docs.google.com/spreadsheets/d/{spreadsheet_id}/edit)')                    
+                            st.success(f'All data successfully exported to Google Sheets. [Click here to open the spreadsheet](https://docs.google.com/spreadsheets/d/{spreadsheet_id}/edit)')
+                            
 if __name__ == '__main__':
     main()
 
