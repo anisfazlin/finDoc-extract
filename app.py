@@ -521,7 +521,7 @@ def main():
                         key=selected_category_key
                     )
 
-                    st.session_state[selected_category_key] = selected_category
+                    # st.session_state[selected_category_key] = selected_category
 
                     data_points_template = generate_prompt_template(selected_category)
                     data = extract_structured_data(content, data_points_template)
