@@ -5,7 +5,6 @@ pypdfium2
 opencv-python-headless
 numpy
 pandas
-re
 requests
 google-auth
 google-auth-oauthlib
