@@ -26,7 +26,7 @@ from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaFileUpload
 
 open_api_key = st.secrets["OPENAI_API_KEY"]
-ngrok_url = st.secrets["NGROK_URL"]
+# ngrok_url = st.secrets["ngrok_url"]
 
 
 llm = ChatOpenAI(temperature=0.4, model="gpt-3.5-turbo-0125")
