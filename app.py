@@ -27,6 +27,7 @@ from googleapiclient.http import MediaFileUpload
 open_api_key = st.secrets["OPENAI_API_KEY"]
 ngrok_url = st.secrets["NGROK_URL"]
 
+
 llm = ChatOpenAI(temperature=0.4, model="gpt-3.5-turbo-0125")
 # llm = ChatGroq()
 
@@ -216,7 +217,7 @@ def authenticate_google():
         else:
             flow = InstalledAppFlow.from_client_secrets_file(
                 os.path.join(os.path.dirname(os.path.abspath(__file__)), 'secret_client.json'), SCOPES)
-            flow.redirect_uri = f"{NGROK_URL}/callback"  # Set the redirect URI here
+            flow.redirect_uri = f"{ngrok_url}/callback"  # Set the redirect URI here
             creds = flow.run_local_server(port=8080)
         
         with open('token.json', 'w') as token:
