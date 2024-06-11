@@ -5,6 +5,7 @@ import pypdfium2 as pdfium
 import streamlit as st
 import multiprocessing
 from tempfile import NamedTemporaryFile
+from demjson3 import decode
 import cv2
 import numpy as np
 import pandas as pd
@@ -87,8 +88,6 @@ def extract_content(file_path, file_extension, whitelist="abcdefghijklmnopqrstuv
             image = Image.open(image_file)
             text_with_pytesseract = image_to_string(image, config=custom_config)
     return text_with_pytesseract
-    
-from demjson3 import decode
 
 def parse_json_robustly(content):
     try:
@@ -208,19 +207,33 @@ def extract_structured_data(content: str, data_points):
 def authenticate_google():
     """Authenticate and return the Google API client."""
     creds = None
-    if os.path.exists('token.json'):
-        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+    token_path = 'token.json'
     
+    # Load credentials from token.json if it exists
+    if os.path.exists(token_path):
+        creds = Credentials.from_authorized_user_file(token_path, SCOPES)
+    
+    # If there are no valid credentials available, let the user log in.
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                os.path.join(os.path.dirname(os.path.abspath(__file__)), 'secret_client.json'), SCOPES)
-            flow.redirect_uri = f"{ngrok_url}/callback"  # Set the redirect URI here
+            # Load client secrets from Streamlit secrets
+            client_config = {
+                "installed": {
+                    "client_id": st.secrets["google"]["client_id"],
+                    "client_secret": st.secrets["google"]["client_secret"],
+                    "redirect_uris": [st.secrets["google"]["redirect_uri"]],
+                    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                    "token_uri": "https://oauth2.googleapis.com/token"
+                }
+            }
+            flow = InstalledAppFlow.from_client_config(client_config, SCOPES)
+            flow.redirect_uri = st.secrets["google"]["redirect_uri"]
             creds = flow.run_local_server(port=8080)
         
-        with open('token.json', 'w') as token:
+        # Save the credentials for the next run
+        with open(token_path, 'w') as token:
             token.write(creds.to_json())
     
     return creds
