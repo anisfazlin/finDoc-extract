@@ -229,8 +229,8 @@ def authenticate_google():
                     "client_id" : st.secrets["google_client_id"],
                     "auth_uri" : st.secrets["google_auth_uri"],
                     "token_uri" : st.secrets["google_token_uri"],
-                    "auth_provider_x509_cert_url" : st.secrets["auth_provider_x509_cert_url"],
-                    "client_x509_cert_url" : st.secrets["client_x509_cert_url"],
+                    "auth_provider_x509_cert_url" : st.secrets["google_auth_provider_x509_cert_url"],
+                    "client_x509_cert_url" : st.secrets["google_client_x509_cert_url"],
                 }
             }
             flow = InstalledAppFlow.from_client_config(client_config, SCOPES)
