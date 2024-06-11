@@ -221,16 +221,16 @@ def authenticate_google():
             # Load client secrets from Streamlit secrets
             client_config = {
                 "installed": {
-                    "type" : st.secrets["google_type"]
-                    "project_id" : st.secrets["google_project_id"]
-                    "private_key_id" : st.secrets["google_private_key_id"]
-                    "private_key" : st.secrets["google_private_key"]
-                    "client_email" : st.secrets["google_client_email"]
-                    "client_id" : st.secrets["google_client_id"]
-                    "auth_uri" : st.secrets["google_auth_uri"]
-                    "token_uri" : st.secrets["google_token_uri"]
-                    "auth_provider_x509_cert_url" : st.secrets["auth_provider_x509_cert_url"]
-                    "client_x509_cert_url" : st.secrets["client_x509_cert_url"]
+                    "type" : st.secrets["google_type"],
+                    "project_id" : st.secrets["google_project_id"],
+                    "private_key_id" : st.secrets["google_private_key_id"],
+                    "private_key" : st.secrets["google_private_key"],
+                    "client_email" : st.secrets["google_client_email"],
+                    "client_id" : st.secrets["google_client_id"],
+                    "auth_uri" : st.secrets["google_auth_uri"],
+                    "token_uri" : st.secrets["google_token_uri"],
+                    "auth_provider_x509_cert_url" : st.secrets["auth_provider_x509_cert_url"],
+                    "client_x509_cert_url" : st.secrets["client_x509_cert_url"],
                 }
             }
             flow = InstalledAppFlow.from_client_config(client_config, SCOPES)
