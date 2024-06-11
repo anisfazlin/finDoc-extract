@@ -205,42 +205,59 @@ def extract_structured_data(content: str, data_points):
 #5. Export to Google Sheets
 
 def authenticate_google():
+    # """Authenticate and return the Google API client."""
+    # creds = None
+    # token_path = 'token.json'
+    
+    # # Load credentials from token.json if it exists
+    # if os.path.exists(token_path):
+    #     creds = Credentials.from_authorized_user_file(token_path, SCOPES)
+    
+    # # If there are no valid credentials available, let the user log in.
+    # if not creds or not creds.valid:
+    #     if creds and creds.expired and creds.refresh_token:
+    #         creds.refresh(Request())
+    #     else:
+    #         # Load client secrets from Streamlit secrets
+    #         client_config = {
+    #             "installed": {
+    #                 "type" : st.secrets["google_type"],
+    #                 "project_id" : st.secrets["google_project_id"],
+    #                 "private_key_id" : st.secrets["google_private_key_id"],
+    #                 "private_key" : st.secrets["google_private_key"],
+    #                 "client_email" : st.secrets["google_client_email"],
+    #                 "client_id" : st.secrets["google_client_id"],
+    #                 "auth_uri" : st.secrets["google_auth_uri"],
+    #                 "token_uri" : st.secrets["google_token_uri"],
+    #                 "auth_provider_x509_cert_url" : st.secrets["google_auth_provider_x509_cert_url"],
+    #                 "client_x509_cert_url" : st.secrets["google_client_x509_cert_url"],
+    #             }
+    #         }
+    #         flow = InstalledAppFlow.from_client_config(client_config, SCOPES)
+    #         flow.redirect_uri = st.secrets["google_redirect_uri"]
+    #         creds = flow.run_local_server(port=8080)
+        
+    #     # Save the credentials for the next run
+    #     with open(token_path, 'w') as token:
+    #         token.write(creds.to_json())
+    
+    # return creds
     """Authenticate and return the Google API client."""
     creds = None
-    token_path = 'token.json'
-    
-    # Load credentials from token.json if it exists
-    if os.path.exists(token_path):
-        creds = Credentials.from_authorized_user_file(token_path, SCOPES)
-    
-    # If there are no valid credentials available, let the user log in.
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            # Load client secrets from Streamlit secrets
-            client_config = {
-                "installed": {
-                    "type" : st.secrets["google_type"],
-                    "project_id" : st.secrets["google_project_id"],
-                    "private_key_id" : st.secrets["google_private_key_id"],
-                    "private_key" : st.secrets["google_private_key"],
-                    "client_email" : st.secrets["google_client_email"],
-                    "client_id" : st.secrets["google_client_id"],
-                    "auth_uri" : st.secrets["google_auth_uri"],
-                    "token_uri" : st.secrets["google_token_uri"],
-                    "auth_provider_x509_cert_url" : st.secrets["google_auth_provider_x509_cert_url"],
-                    "client_x509_cert_url" : st.secrets["google_client_x509_cert_url"],
-                }
-            }
-            flow = InstalledAppFlow.from_client_config(client_config, SCOPES)
-            flow.redirect_uri = st.secrets["google_redirect_uri"]
-            creds = flow.run_local_server(port=8080)
-        
-        # Save the credentials for the next run
-        with open(token_path, 'w') as token:
-            token.write(creds.to_json())
-    
+    if 'google_private_key' in st.secrets:
+        service_account_info = {
+            "type": st.secrets["google_type"],
+            "project_id": st.secrets["google_project_id"],
+            "private_key_id": st.secrets["google_private_key_id"],
+            "private_key": st.secrets["google_private_key"],
+            "client_email": st.secrets["google_client_email"],
+            "client_id": st.secrets["google_client_id"],
+            "auth_uri": st.secrets["google_auth_uri"],
+            "token_uri": st.secrets["google_token_uri"],
+            "auth_provider_x509_cert_url": st.secrets["google_auth_provider_x509_cert_url"],
+            "client_x509_cert_url": st.secrets["google_client_x509_cert_url"]
+        }
+        creds = Credentials.from_service_account_info(service_account_info, scopes=SCOPES)
     return creds
 
 def get_spreadsheet_by_title(creds, title):
