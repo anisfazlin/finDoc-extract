@@ -221,9 +221,9 @@ def authenticate_google():
             # Load client secrets from Streamlit secrets
             client_config = {
                 "installed": {
-                    "client_id": st.secrets["google"]["client_id"],
-                    "client_secret": st.secrets["google"]["client_secret"],
-                    "redirect_uris": [st.secrets["google"]["redirect_uri"]],
+                    "client_id": st.secrets["google_client_id"],
+                    "client_secret": st.secrets["google_client_secret"],
+                    "redirect_uris": [st.secrets["google_redirect_uri"]],
                     "auth_uri": "https://accounts.google.com/o/oauth2/auth",
                     "token_uri": "https://oauth2.googleapis.com/token"
                 }
