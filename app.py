@@ -508,7 +508,7 @@ def main():
                     category = classification_result
 
                     categories = ["bank statement", "invoice", "receipt", "income statement"]
-                    selected_category_key = f"selectbox_{uploaded_file.name}"
+                    selected_category_key = f"selectbox_{uploaded_file.name}_{idx}"
                     if selected_category_key not in st.session_state:
                         st.session_state[selected_category_key] = category
 
