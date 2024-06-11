@@ -5,7 +5,6 @@ import pypdfium2 as pdfium
 import streamlit as st
 import multiprocessing
 from tempfile import NamedTemporaryFile
-from dotenv import load_dotenv
 import cv2
 import numpy as np
 import pandas as pd
