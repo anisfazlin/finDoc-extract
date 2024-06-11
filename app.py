@@ -25,7 +25,7 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaFileUpload
 
-open_api_key = st.secrets["OPENAI_API_KEY"]
+open_api_key = st.secrets["openai"]["OPENAI_API_KEY"]
 # ngrok_url = st.secrets["ngrok_url"]
 
 
