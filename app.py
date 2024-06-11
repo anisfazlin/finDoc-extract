@@ -473,7 +473,7 @@ def validate_json(content):
 #                         if spreadsheet_id:
 #                             st.success(f'All data successfully exported to Google Sheets. [Click here to open the spreadsheet](https://docs.google.com/spreadsheets/d/{spreadsheet_id}/edit)')       
 
-ef main():
+def main():
     st.markdown('Generate your personal ledger by uploading your financial documents - powered by Artificial Intelligence.')
     st.title("FinData - Unstructured Data to Structured Financial Data Extraction & Classification")
 
